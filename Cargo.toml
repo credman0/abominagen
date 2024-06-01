@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 include_dir = "0.7.3"
 structopt = "0.3.26"
+uwuify = {version="0.2.2", default-features = false}
