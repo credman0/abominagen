@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use include_dir::{include_dir, Dir};
 
 static SELF_DIR: Dir = include_dir!("src/");
@@ -77,6 +79,7 @@ fn create_file_actions_from_dir(dir: &Dir) -> Vec<AbstractAction> {
     for file in dir.files() {
         let mut file_path:Vec<String> = file.path().into_iter().map(|s| s.to_str().expect("Invalid file path").to_string()).collect();
         file_path.insert(0, BASE_DIR_NAME.to_string());
+        file_path.pop(); // Remove filename from end of path
         let contents = file.contents_utf8().unwrap();
         let file = AbstractFile::new(
             AbstractDirectory { path: file_path },
@@ -92,9 +95,11 @@ fn create_file_actions_from_dir(dir: &Dir) -> Vec<AbstractAction> {
 }
 
 pub fn self_creation_actions() -> Vec<AbstractAction> {
-    let mut actions = create_dir_actions_from_dir(&SELF_DIR);
+    let mut actions = vec![];
+    actions.push(AbstractAction::CreateDirectory(AbstractDirectory::new().push(BASE_DIR_NAME.to_string())));
+    actions.extend(create_dir_actions_from_dir(&SELF_DIR));
     actions.extend(create_file_actions_from_dir(&SELF_DIR));
-    actions.push(AbstractAction::CreateFile(AbstractFile::new(AbstractDirectory::new(), "cargo.toml".to_string(), include_str!("../../Cargo.toml").to_string())));
+    actions.push(AbstractAction::CreateFile(AbstractFile::new(AbstractDirectory::new().push(BASE_DIR_NAME.to_string()), "Cargo.toml".to_string(), include_str!("../../Cargo.toml").to_string())));
     actions
 }
 
@@ -103,16 +108,15 @@ pub fn execute_actions(actions:Vec<AbstractAction>) {
         match action {
             AbstractAction::CreateFile(file) => {
                 let directory = file.path();
+                let mut file_path = file.path().path().iter().fold(PathBuf::new(), |acc: PathBuf, dir| acc.join(dir));
                 if !directory.path().is_empty() {
-                    std::fs::create_dir_all(directory.path().iter().fold(String::new(), |acc, dir| acc + "/" + dir)).expect("Unable to create directory");
+                    std::fs::create_dir_all(&file_path).expect("Unable to create directory");            
                 }
-                let mut file_path = directory.path().iter().fold(String::new(), |acc, dir| acc + "/" + dir);
-                file_path.push_str("/");
-                file_path.push_str(&file.name());
+                file_path.push(&file.name());
                 std::fs::write(file_path, file.contents()).expect("Unable to write to file");
             }
             AbstractAction::CreateDirectory(dir) => {
-                std::fs::create_dir_all(dir.path().iter().fold(String::new(), |acc, dir| acc + "/" + dir)).expect("Unable to create directory");
+                std::fs::create_dir_all(dir.path().iter().fold(PathBuf::new(), |acc: PathBuf, dir| acc.join(dir))).expect("Unable to create directory");            
             }
         }
     }

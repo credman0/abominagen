@@ -6,6 +6,7 @@ pub fn wrap_actions(actions:Vec<AbstractAction>) -> Vec<AbstractAction> {
     let code = to_code(actions);
     let mut wrapped_actions = Vec::new();
     let base_dir = AbstractDirectory::new().push("rust".to_string());
+    wrapped_actions.push(AbstractAction::CreateDirectory(base_dir.clone()));
     let src_dir = base_dir.clone().push("src".to_string());
     wrapped_actions.push(AbstractAction::CreateDirectory(src_dir.clone()));
     let main_src = wrap_code(code);
@@ -29,7 +30,7 @@ fn wrap_code(code:String) -> String {
     let mut full_src = String::new();
     full_src.push_str("use std::fs::File;\n");
     full_src.push_str("use std::io::Write;\n");
-    full_src.push_str("use std::path::Path;\n");
+    full_src.push_str("use std::path::PathBuf;\n");
     full_src.push_str("fn main() {\n");
     full_src.push_str(&code);
     full_src.push_str("}\n");
@@ -49,7 +50,7 @@ fn to_code(actions:Vec<AbstractAction>) -> String {
                     }
                     code.push_str(&format!("dir_path.push(\"{}\");\n", file.name()));
                 } else {
-                    code.push_str("let dir_path = Path::new().push_str(&file.name());\n");
+                    code.push_str(&format!("let dir_path = PathBuf::from(\"{}\");\n", &file.name()));
                 }
                 code.push_str(&format!("let mut file = File::create(dir_path).expect(\"Unable to create file\");\n"));
                 code.push_str(&format!("file.write_all(\"{}\".as_bytes()).expect(\"Unable to write to file\");\n", escape_string(&file.contents())));
