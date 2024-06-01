@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 include_dir = "0.7.3"
+structopt = "0.3.26"

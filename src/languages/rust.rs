@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::codeabstractions::{AbstractAction, AbstractFile, AbstractDirectory};
 
 pub fn wrap_actions(actions:Vec<AbstractAction>) -> Vec<AbstractAction> {
@@ -44,23 +42,23 @@ fn to_code(actions:Vec<AbstractAction>) -> String {
             AbstractAction::CreateFile(file) => {
                 let directory = file.path();
                 if !directory.path().is_empty() {
-                    code.push_str("let mut dir_path = PathBuf::new();");
+                    code.push_str("\tlet mut dir_path = PathBuf::new();");
                     for dir in directory.path() {
-                        code.push_str(&format!("dir_path.push(\"{}\");\n", dir));
+                        code.push_str(&format!("\tdir_path.push(\"{}\");\n", dir));
                     }
-                    code.push_str(&format!("dir_path.push(\"{}\");\n", file.name()));
+                    code.push_str(&format!("\tdir_path.push(\"{}\");\n", file.name()));
                 } else {
-                    code.push_str(&format!("let dir_path = PathBuf::from(\"{}\");\n", &file.name()));
+                    code.push_str(&format!("\tlet dir_path = PathBuf::from(\"{}\");\n", &file.name()));
                 }
-                code.push_str(&format!("let mut file = File::create(dir_path).expect(\"Unable to create file\");\n"));
-                code.push_str(&format!("file.write_all(\"{}\".as_bytes()).expect(\"Unable to write to file\");\n", escape_string(&file.contents())));
+                code.push_str(&format!("\tlet mut file = File::create(dir_path).expect(\"Unable to create file\");\n"));
+                code.push_str(&format!("\tfile.write_all(\"{}\".as_bytes()).expect(\"Unable to write to file\");\n", escape_string(&file.contents())));
             }
             AbstractAction::CreateDirectory(dir) => {
-                code.push_str("let mut dir_path = PathBuf::new();");
+                code.push_str("\tlet mut dir_path = PathBuf::new();");
                 for dir in dir.path() {
-                    code.push_str(&format!("dir_path.push(\"{}\");\n", dir));
+                    code.push_str(&format!("\tdir_path.push(\"{}\");\n", dir));
                 }
-                code.push_str(&format!("std::fs::create_dir_all(dir_path).expect(\"Unable to create directory\");\n"));
+                code.push_str(&format!("\tstd::fs::create_dir_all(dir_path).expect(\"Unable to create directory\");\n"));
             }
         }
     }
